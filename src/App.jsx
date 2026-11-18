@@ -12,6 +12,7 @@ import { Toaster } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import axiosRequest from "./axios-request";
 import Home from "./Website/Pages/Home";
+import UAECustomerDashboard from "./User-Dashboard/Pages/UAECustomerDashboard";
 
 function App() {
   const [count, setCount] = useState(0)
@@ -21,10 +22,17 @@ function App() {
     <>
       <Router>
         <Routes>
+
           <Route
             path="/"
             element={<Home />}
           />
+
+          <Route
+            path="/user/dashboard/*"
+            element={<UAECustomerDashboard />}
+          />
+
         </Routes>
       </Router>
 
