@@ -9,17 +9,16 @@ import UAEFormationFAQ from "../Components/UAEFormationFAQ";
 import UAEFormationCTA from "../Components/UAEFormationCTA";
 import UAEFormationFooter from "../Components/UAEFormationFooter";
 import UAEFormationHeader from "../Components/UAEFormationHeader";
+import UAEEmiratesExplorer from "../Components/UAEEmiratesExplorer";
 
 export default function Home() {
     return (
         <>
-            {/* <div style={{ position: 'sticky', top: '0', zIndex: '1000' }}>
-                <HeaderDesignV1 />
-            </div> */}
             <UAEFormationHeader />
             <UAEFormationHero />
             <WhyChooseUAE />
             <UAEFormationProcess />
+            <UAEEmiratesExplorer />
             <UAEJurisdiction />
             <UAEFreeZoneBenefits />
             <UAEAchievements />
