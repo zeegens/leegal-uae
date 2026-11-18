@@ -5,6 +5,7 @@ import { LayoutDashboard, Building2, ClipboardList, Clock3, UsersRound, FolderOp
 import FormationApplication from './FormationApplication';
 import ApplicationProgress from './ApplicationProgress';
 import Documents from './Documents';
+import ShareholdersUBOs from './ShareholdersUBOs';
 
 const groups = [
   { title: 'WORKSPACE', items: [['companies', 'All Companies', Building2, 'companies'], ['overview', 'Overview', LayoutDashboard, ''], ['company', 'My Company', Building2, 'company'], ['application', 'Formation Application', ClipboardList, 'application'], ['progress', 'Application Progress', Clock3, 'progress']] },
@@ -98,6 +99,15 @@ export default function UAECustomerDashboard({ basePath = '/user/dashboard', log
                   // company={activeCompany}
                   // companyId={activeCompanyId}
                   navigate={navigate}
+                />
+              }
+            />
+            <Route
+              path="shareholders"
+              element={
+                <ShareholdersUBOs
+                // company={activeCompany}
+                // companyId={activeCompanyId}
                 />
               }
             />
