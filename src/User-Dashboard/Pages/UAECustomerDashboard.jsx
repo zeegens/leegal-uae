@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 import MyCompany from "./MyCompany";
 import { LayoutDashboard, Building2, ClipboardList, Clock3, UsersRound, FolderOpen, FileCheck2, IdCard, Landmark, ReceiptText, MessageSquareText, CalendarDays, Bell, HelpCircle, Settings2, PanelLeft, Menu, X, ChevronDown, ChevronRight, Search, LogOut, ArrowUpRight, ArrowRight, ShieldCheck, Sparkles, Mail, Plus, Check, ChevronsUpDown } from 'lucide-react';
+import FormationApplication from './FormationApplication';
+import ApplicationProgress from './ApplicationProgress';
+import Documents from './Documents';
 
 const groups = [
   { title: 'WORKSPACE', items: [['companies', 'All Companies', Building2, 'companies'], ['overview', 'Overview', LayoutDashboard, ''], ['company', 'My Company', Building2, 'company'], ['application', 'Formation Application', ClipboardList, 'application'], ['progress', 'Application Progress', Clock3, 'progress']] },
@@ -68,7 +71,36 @@ export default function UAECustomerDashboard({ basePath = '/user/dashboard', log
                 />
               }
             />
-            <Route path="application" element={pageComponents.application ? React.createElement(pageComponents.application, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'application')} />} />
+            <Route
+              path="application"
+              element={
+                <FormationApplication
+                  // company={activeCompany}
+                  // companyId={activeCompanyId}
+                  navigate={navigate}
+                />
+              }
+            />
+            <Route
+              path="progress"
+              element={
+                <ApplicationProgress
+                  // company={activeCompany}
+                  // companyId={activeCompanyId}
+                  navigate={navigate}
+                />
+              }
+            />
+            <Route
+              path="documents"
+              element={
+                <Documents
+                  // company={activeCompany}
+                  // companyId={activeCompanyId}
+                  navigate={navigate}
+                />
+              }
+            />
             <Route path="progress" element={pageComponents.progress ? React.createElement(pageComponents.progress, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'progress')} />} />
             <Route path="shareholders" element={pageComponents.shareholders ? React.createElement(pageComponents.shareholders, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'shareholders')} />} />
             <Route path="documents" element={pageComponents.documents ? React.createElement(pageComponents.documents, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'documents')} />} />
