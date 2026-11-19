@@ -6,17 +6,40 @@ import FormationApplication from './FormationApplication';
 import ApplicationProgress from './ApplicationProgress';
 import Documents from './Documents';
 import ShareholdersUBOs from './ShareholdersUBOs';
+import LicencesApprovals from './LicencesApprovals';
+import AccountSettings from './AccountSettings';
+import Overview from './Overview';
+import AllCompanies from './AllCompanies';
 
 const groups = [
-  { title: 'WORKSPACE', items: [['companies', 'All Companies', Building2, 'companies'], ['overview', 'Overview', LayoutDashboard, ''], ['company', 'My Company', Building2, 'company'], ['application', 'Formation Application', ClipboardList, 'application'], ['progress', 'Application Progress', Clock3, 'progress']] },
+  { title: 'WORKSPACE', items: [['companies', 'All Companies', Building2, 'companies'], ['overview', 'Overview', LayoutDashboard, ''], ['company', 'My Company', Building2, 'company'], ['progress', 'Application Progress', Clock3, 'progress']] },
   { title: 'COMPANY SETUP', items: [['shareholders', 'Shareholders & UBOs', UsersRound, 'shareholders'], ['documents', 'Documents', FolderOpen, 'documents'], ['approvals', 'Licences & Approvals', FileCheck2, 'approvals'], ['visas', 'Visas & Immigration', IdCard, 'visas'], ['banking', 'Banking Assistance', Landmark, 'banking']] },
-  { title: 'ACCOUNT & SUPPORT', items: [['invoices', 'Invoices & Payments', ReceiptText, 'invoices'], ['messages', 'Messages', MessageSquareText, 'messages'], ['appointments', 'Appointments', CalendarDays, 'appointments'], ['notifications', 'Notifications', Bell, 'notifications'], ['support', 'Help & Support', HelpCircle, 'support'], ['settings', 'Account Settings', Settings2, 'settings']] }
+  { title: 'ACCOUNT & SUPPORT', items: [['appointments', 'Appointments', CalendarDays, 'appointments'], ['support', 'Help & Support', HelpCircle, 'support'], ['settings', 'Account Settings', Settings2, 'settings']] }
 ];
 const pages = groups.flatMap(g => g.items).map(([id, label, icon, path]) => ({ id, label, icon, path }));
 function Placeholder({ page }) { const Icon = page.icon; return <section className="uc-placeholder"><div className="uc-placeholder-icon"><Icon size={28} /></div><span className="uc-eyebrow">LEEGAL UAE CLIENT PORTAL</span><h2>{page.label}</h2><p>This is your {page.label.toLowerCase()} page. We'll build its dedicated content here next.</p><span className="uc-ready"><span /> Route ready for development</span></section> }
-export default function UAECustomerDashboard({ basePath = '/user/dashboard', logoSrc, user = { name: 'Your Account', email: 'Client account' }, companyName = 'My UAE Company', companies: suppliedCompanies, initialCompanyId, onAddCompany, onCompanyChange, pageComponents = {}, onLogout }) {
+export default function UAECustomerDashboard({ basePath = '/user/dashboard', logoSrc, user = { name: 'Your Account', email: 'Client account' }, companyName = 'My UAE Company', companies: suppliedCompanies, initialCompanyId, onAddCompany, onCompanyChange, pageComponents = {}, onLogout, onSubmitSupport }) {
   const location = useLocation(), navigate = useNavigate();
   const [companyPicker, setCompanyPicker] = useState(false), [companySearch, setCompanySearch] = useState(''), [collapsed, setCollapsed] = useState(false), [mobile, setMobile] = useState(false), [search, setSearch] = useState(false), [query, setQuery] = useState(''), [profile, setProfile] = useState(false), [notifications, setNotifications] = useState(false), [dismissed, setDismissed] = useState(false), [logoutDialog, setLogoutDialog] = useState(false), [expanded, setExpanded] = useState({ 'WORKSPACE': true, 'COMPANY SETUP': true, 'ACCOUNT & SUPPORT': true });
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [supportForm, setSupportForm] = useState({ subject: '', category: 'General enquiry', message: '' });
+  const [supportSubmitting, setSupportSubmitting] = useState(false);
+  const [supportError, setSupportError] = useState('');
+  const [supportSuccess, setSupportSuccess] = useState(false);
+  const closeSupport = () => { if (!supportSubmitting) { setSupportOpen(false); setSupportError(''); setSupportSuccess(false); } };
+  const openSupport = () => { setSupportOpen(true); setSupportError(''); setSupportSuccess(false); setMobile(false); setProfile(false); setSearch(false); setQuery(''); setCompanyPicker(false); };
+  const submitSupport = async e => {
+    e.preventDefault();
+    if (!supportForm.subject.trim() || !supportForm.message.trim()) { setSupportError('Please complete the subject and message.'); return; }
+    if (!onSubmitSupport) { setSupportError('Support submission is not connected yet. Please contact your administrator.'); return; }
+    setSupportSubmitting(true); setSupportError('');
+    try {
+      await onSubmitSupport({ ...supportForm, subject: supportForm.subject.trim(), message: supportForm.message.trim(), company: activeCompany, companyId: activeCompanyId, user });
+      setSupportSuccess(true);
+      setSupportForm({ subject: '', category: 'General enquiry', message: '' });
+    } catch (error) { setSupportError(error?.message || 'Unable to send your request. Please try again.'); }
+    finally { setSupportSubmitting(false); }
+  };
   const base = '/' + basePath.replace(/^\/+|\/+$/g, '');
   // Dashboard routes are flat: /user/dashboard/documents, /user/dashboard/settings, etc.
   // Company selection is separate from the URL, allowing the same pages to serve multiple companies.
@@ -28,9 +51,9 @@ export default function UAECustomerDashboard({ basePath = '/user/dashboard', log
   const activeCompany = companies.find(c => String(c.id) === String(selectedId)) || companies[0];
   const activeCompanyId = String(activeCompany.id);
   const results = useMemo(() => pages.filter(p => p.label.toLowerCase().includes(query.toLowerCase())), [query]);
-  const go = p => { navigate(`${base}${p.path ? '/' + p.path : ''}`); setMobile(false); setSearch(false); setQuery(''); setProfile(false); setNotifications(false); setCompanyPicker(false) };
+  const go = p => { if (p.id === 'support') { openSupport(); return; } navigate(`${base}${p.path ? '/' + p.path : ''}`); setMobile(false); setSearch(false); setQuery(''); setProfile(false); setNotifications(false); setCompanyPicker(false) };
   const switchCompany = c => { setSelectedId(c.id); setCompanyPicker(false); setCompanySearch(''); if (onCompanyChange) onCompanyChange(c); if (page.id === 'companies') navigate(base); };
-  useEffect(() => { const f = e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setSearch(true) } if (e.key === 'Escape') { setSearch(false); setMobile(false); setProfile(false); setNotifications(false); setLogoutDialog(false) } }; document.addEventListener('keydown', f); return () => document.removeEventListener('keydown', f) }, []);
+  useEffect(() => { const f = e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setSearch(true) } if (e.key === 'Escape') { setSearch(false); setMobile(false); setProfile(false); setNotifications(false); setLogoutDialog(false); closeSupport() } }; document.addEventListener('keydown', f); return () => document.removeEventListener('keydown', f) }, []);
   useEffect(() => { setMobile(false); setCompanyPicker(false) }, [location.pathname]);
   const initials = (user?.name || 'U').split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase();
   return <><style>{css}</style><div className={'uc-root ' + (collapsed ? 'uc-collapsed' : '')}>
@@ -59,7 +82,8 @@ export default function UAECustomerDashboard({ basePath = '/user/dashboard', log
         <div className="uc-content-width">
           {page.id === 'overview' && !dismissed && <section className="uc-welcome"><div className="uc-welcome-orbit" /><span className="uc-welcome-symbol"><Sparkles size={21} /></span><div className="uc-welcome-copy"><small>WELCOME TO LEEGAL UAE</small><h2>Your business journey, beautifully organized.</h2><p>Track your formation, manage important documents, and stay connected with your team — all in one place.</p></div><button className="uc-welcome-action" onClick={() => go(pages.find(p => p.id === 'application'))}>View application <ArrowUpRight size={17} /></button><button className="uc-welcome-x" aria-label="Dismiss message" onClick={() => setDismissed(true)}><X size={16} /></button></section>}
           <Routes>
-            <Route index element={pageComponents.overview ? React.createElement(pageComponents.overview, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'overview')} />} />
+            <Route path="companies" element={<AllCompanies companies={companies} activeCompanyId={activeCompanyId} onSelectCompany={switchCompany} onAddCompany={onAddCompany} navigate={navigate} basePath={base} />} />
+            <Route index element={<Overview company={activeCompany} companyId={activeCompanyId} navigate={navigate} onOpenSupport={openSupport} />} />
             {/* <Route path="company" element={pageComponents.company ? React.createElement(pageComponents.company, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'company')} />} /> */}
 
             <Route
@@ -111,22 +135,57 @@ export default function UAECustomerDashboard({ basePath = '/user/dashboard', log
                 />
               }
             />
-            <Route path="progress" element={pageComponents.progress ? React.createElement(pageComponents.progress, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'progress')} />} />
-            <Route path="shareholders" element={pageComponents.shareholders ? React.createElement(pageComponents.shareholders, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'shareholders')} />} />
-            <Route path="documents" element={pageComponents.documents ? React.createElement(pageComponents.documents, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'documents')} />} />
-            <Route path="approvals" element={pageComponents.approvals ? React.createElement(pageComponents.approvals, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'approvals')} />} />
+            <Route
+              path="approvals"
+              element={
+                <LicencesApprovals
+                // company={activeCompany}
+                // companyId={activeCompanyId}
+                />
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <AccountSettings
+                // user={user}
+                // company={activeCompany}
+                // onSaveProfile={handleSaveProfile}
+                // onChangePassword={handleChangePassword}
+                // onSaveNotifications={handleSaveNotifications}
+                // onSavePreferences={handleSavePreferences}
+                // onLogout={onLogout}
+                />
+              }
+            />
             <Route path="visas" element={pageComponents.visas ? React.createElement(pageComponents.visas, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'visas')} />} />
             <Route path="banking" element={pageComponents.banking ? React.createElement(pageComponents.banking, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'banking')} />} />
-            <Route path="invoices" element={pageComponents.invoices ? React.createElement(pageComponents.invoices, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'invoices')} />} />
-            <Route path="messages" element={pageComponents.messages ? React.createElement(pageComponents.messages, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'messages')} />} />
             <Route path="appointments" element={pageComponents.appointments ? React.createElement(pageComponents.appointments, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'appointments')} />} />
-            <Route path="notifications" element={pageComponents.notifications ? React.createElement(pageComponents.notifications, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'notifications')} />} />
-            <Route path="support" element={pageComponents.support ? React.createElement(pageComponents.support, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'support')} />} />
-            <Route path="settings" element={pageComponents.settings ? React.createElement(pageComponents.settings, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'settings')} />} />
-            <Route path="companies" element={pageComponents.companies ? React.createElement(pageComponents.companies, { companies, activeCompany, onCompanySelect: switchCompany, onAddCompany }) : <section className="uc-companies-page"><div className="uc-companies-head"><div><h2>Your companies</h2><p>Select a company to manage its formation and documents.</p></div>{onAddCompany && <button onClick={onAddCompany}><Plus size={16} /> Add company</button>}</div><div className="uc-companies-grid">{companies.map(c => <button key={c.id} className="uc-company-card" onClick={() => switchCompany(c)}><span className="uc-company-card-icon"><Building2 size={23} /></span><strong>{c.name}</strong><small>{c.status || 'Company workspace'}</small><span>Open workspace <ArrowUpRight size={16} /></span></button>)}</div></section>} />
+            <Route path="support" element={<Navigate to={base} replace />} />
             <Route path="*" element={<Navigate to={base} replace />} />
           </Routes></div></main></div>
   </div>
+    {supportOpen && <div className="uc-modal-bg" onMouseDown={e => { if (e.target === e.currentTarget) closeSupport(); }}>
+      <section className="uc-help-modal" role="dialog" aria-modal="true" aria-labelledby="uc-help-title">
+        <div className="uc-help-head"><span className="uc-help-icon"><HelpCircle size={23} /></span><button type="button" className="uc-help-close" aria-label="Close help form" onClick={closeSupport} disabled={supportSubmitting}><X size={19} /></button></div>
+        {supportSuccess ? <div className="uc-help-success"><span><Check size={26} /></span><h2 id="uc-help-title">Request submitted</h2><p>Your support request has been sent to the Leegal team.</p><button type="button" onClick={closeSupport}>Done</button></div> : <>
+          <h2 id="uc-help-title">How can we help?</h2><p className="uc-help-intro">Tell us what you need assistance with. Our team will review your request.</p>
+          <form className="uc-help-form" onSubmit={submitSupport}>
+            <div className="uc-help-context"><Building2 size={16} /><span>Regarding <strong>{activeCompany.name}</strong></span></div>
+            <label htmlFor="uc-help-category">Support category</label>
+            <select id="uc-help-category" value={supportForm.category} onChange={e => setSupportForm(v => ({ ...v, category: e.target.value }))}>
+              {['General enquiry', 'Company formation', 'Application progress', 'Documents & approvals', 'Shareholders & UBOs', 'Billing & payments', 'Technical issue', 'Other'].map(item => <option key={item} value={item}>{item}</option>)}
+            </select>
+            <label htmlFor="uc-help-subject">Subject <span>*</span></label>
+            <input id="uc-help-subject" required maxLength={150} placeholder="Briefly describe your issue" value={supportForm.subject} onChange={e => setSupportForm(v => ({ ...v, subject: e.target.value }))} />
+            <label htmlFor="uc-help-message">How can we assist? <span>*</span></label>
+            <textarea id="uc-help-message" required rows={5} maxLength={3000} placeholder="Describe your question or issue in detail..." value={supportForm.message} onChange={e => setSupportForm(v => ({ ...v, message: e.target.value }))} />
+            {supportError && <p className="uc-help-error" role="alert">{supportError}</p>}
+            <div className="uc-help-actions"><button type="button" onClick={closeSupport} disabled={supportSubmitting}>Cancel</button><button type="submit" disabled={supportSubmitting}>{supportSubmitting ? 'Submitting...' : 'Submit request'} <ArrowRight size={16} /></button></div>
+          </form>
+        </>}
+      </section>
+    </div>}
     {logoutDialog && <div className="uc-modal-bg" onMouseDown={e => { if (e.target === e.currentTarget) setLogoutDialog(false) }}><div className="uc-modal" role="dialog" aria-modal="true"><span className="uc-modal-icon"><LogOut size={22} /></span><h2>Sign out of Leegal?</h2><p>You'll need to log in again to access your company formation dashboard.</p><div><button onClick={() => setLogoutDialog(false)}>Cancel</button><button onClick={() => { setLogoutDialog(false); if (onLogout) onLogout(); else navigate('/login') }}>Sign out <ArrowRight size={16} /></button></div></div></div>}
   </>;
 }
@@ -151,5 +210,13 @@ const css = `
 .uc-company-picker-wrap{position:relative;flex:none}.uc-company-trigger{width:calc(100% - 26px);cursor:pointer;text-align:left;font-family:inherit;transition:border-color .2s,background .2s}.uc-company-trigger:hover{border-color:#CFD7E2;background:#F3F6FA}.uc-switch-icon{flex:none;color:#8B98AA}.uc-company-dropdown{position:absolute;z-index:100;left:13px;right:13px;top:calc(100% + 6px);background:white;border:1px solid #E4E9F0;border-radius:12px;box-shadow:0 18px 50px #19253624;padding:9px;animation:uc-pop-in .18s ease}.uc-company-drop-head{display:flex;justify-content:space-between;align-items:center;padding:9px 7px 12px}.uc-company-drop-head strong{font-size:12px}.uc-company-drop-head span{font-size:10px;color:#95A1B1}.uc-company-filter{display:flex;align-items:center;gap:8px;background:#F7F9FB;border:1px solid #E8EDF3;border-radius:7px;padding:9px;color:#94A0B0}.uc-company-filter input{min-width:0;flex:1;background:none;border:0;outline:0;font:500 11px 'DM Sans',sans-serif}.uc-company-list{max-height:235px;overflow-y:auto;padding:7px 0}.uc-company-list>button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:10px 8px;border:0;border-radius:8px;background:transparent;color:#192536}.uc-company-list>button:hover,.uc-company-list>button.uc-company-selected{background:#FFF1F2}.uc-company-small-icon{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;background:#F1F3F6;color:#536176;flex:none}.uc-company-list>button>span:nth-child(2){display:flex;flex-direction:column;flex:1;gap:4px;min-width:0}.uc-company-list strong{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.uc-company-list small{font-size:9px;color:#9CA7B5}.uc-company-list>button>svg{color:#EA2024}.uc-no-companies{font-size:11px;color:#94A0B0;text-align:center}.uc-company-manage,.uc-company-add{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:transparent;border:0;border-top:1px solid #EEF1F5;padding:12px 8px 7px;font-size:11px;font-weight:750;color:#192536}.uc-company-add{justify-content:flex-start;color:#EA2024}.uc-company-manage:hover,.uc-company-add:hover{color:#EA2024}.uc-sidebar-bottom{padding:12px 13px 18px}.uc-companies-page{padding:27px;background:#fff;border:1px solid #E7EBF1;border-radius:13px}.uc-companies-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:22px}.uc-companies-head h2{font-size:20px;letter-spacing:-.5px;margin:0 0 6px}.uc-companies-head p{font-size:12px;color:#8794A5;margin:0}.uc-companies-head button{display:flex;align-items:center;gap:7px;padding:12px 15px;border:0;border-radius:8px;background:#EA2024;color:white;font-size:11px;font-weight:800}.uc-companies-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:15px}.uc-company-card{display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;min-height:190px;padding:20px;border:1px solid #E8ECF2;border-radius:11px;background:#fff;color:#192536;transition:border-color .2s,transform .2s,box-shadow .2s}.uc-company-card:hover{border-color:#F0B7B9;transform:translateY(-3px);box-shadow:0 10px 30px #1925360C}.uc-company-card-icon{width:43px;height:43px;border-radius:10px;background:#FFF0F1;color:#EA2024;display:grid;place-items:center}.uc-company-card strong{font-size:14px}.uc-company-card small{font-size:11px;color:#8794A5}.uc-company-card>span:last-child{display:flex;align-items:center;gap:8px;margin-top:auto;color:#EA2024;font-size:11px;font-weight:800}
 @media(max-width:800px){.uc-company-picker-wrap{display:block}.uc-collapsed .uc-company-picker-wrap{display:block}.uc-collapsed .uc-company{display:flex}.uc-company-dropdown{left:13px;right:13px}}
 @media(max-width:550px){.uc-companies-page{padding:18px}.uc-companies-head{align-items:flex-start;flex-direction:column}}
+
+/* Help & Support modal — intentionally no box shadows */
+.uc-help-modal{width:min(100%,540px);max-height:min(92vh,780px);overflow-y:auto;background:#fff;border:1px solid #E5EAF1;border-radius:16px;padding:28px 30px 30px;color:#1A2536;box-shadow:none;font-family:'DM Sans',sans-serif}
+.uc-help-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:17px}.uc-help-icon{width:48px;height:48px;display:grid;place-items:center;background:#FFF0F1;color:#EA2024;border-radius:12px}.uc-help-close{width:34px;height:34px;display:grid;place-items:center;border:1px solid #E6EAF0;background:#fff;border-radius:8px;color:#748196;cursor:pointer}
+.uc-help-modal h2{font-size:23px;letter-spacing:-.65px;margin:0 0 7px;font-weight:800}.uc-help-intro{font-size:12.5px;line-height:1.7;color:#77869A;margin:0 0 22px}.uc-help-form{display:flex;flex-direction:column}.uc-help-context{display:flex;align-items:center;gap:9px;padding:12px 13px;margin-bottom:21px;background:#F2F6FC;border:1px solid #E5EBF4;border-radius:9px;color:#64748B;font-size:12px}.uc-help-context svg{color:#EA2024;flex:none}.uc-help-context strong{color:#1A2536;font-weight:750}
+.uc-help-form label{font-size:12px;font-weight:750;margin:0 0 8px;color:#28364B}.uc-help-form label span{color:#EA2024}.uc-help-form input,.uc-help-form select,.uc-help-form textarea{width:100%;border:1px solid #DDE4EE;background:#fff;color:#1A2536;border-radius:9px;padding:12px 13px;font:500 12.5px 'DM Sans',sans-serif;outline:none;margin-bottom:18px;box-shadow:none;resize:vertical}.uc-help-form input:focus,.uc-help-form select:focus,.uc-help-form textarea:focus{border-color:#EA2024}.uc-help-form input::placeholder,.uc-help-form textarea::placeholder{color:#9AA6B5}.uc-help-error{font-size:12px;color:#B91C1C;margin:0 0 15px}.uc-help-actions{display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #EBEFF4;padding-top:19px}.uc-help-actions button,.uc-help-success button{border:1px solid #DFE5ED;background:#fff;color:#1A2536;border-radius:9px;padding:11px 18px;font:750 12px 'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px}.uc-help-actions button[type=submit],.uc-help-success button{background:#EA2024;border-color:#EA2024;color:white}.uc-help-actions button:disabled{opacity:.6;cursor:wait}.uc-help-success{text-align:center;padding:8px 0 4px}.uc-help-success>span{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 18px;border-radius:50%;background:#EDF8F2;color:#14804A}.uc-help-success p{font-size:13px;color:#78869A;line-height:1.7}.uc-help-success button{margin:23px auto 0;min-width:130px}
+@media(max-width:550px){.uc-help-modal{padding:21px 18px;border-radius:13px}.uc-help-modal h2{font-size:21px}.uc-help-actions button{flex:1}}
+
 @media(prefers-reduced-motion:reduce){.uc-root *,.uc-modal *{transition:none!important;animation:none!important}}
 `;
