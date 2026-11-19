@@ -10,6 +10,8 @@ import LicencesApprovals from './LicencesApprovals';
 import AccountSettings from './AccountSettings';
 import Overview from './Overview';
 import AllCompanies from './AllCompanies';
+import VisasImmigration from './VisasImmigration';
+import BankingAssistance from './BankingAssistance';
 
 const groups = [
   { title: 'WORKSPACE', items: [['companies', 'All Companies', Building2, 'companies'], ['overview', 'Overview', LayoutDashboard, ''], ['company', 'My Company', Building2, 'company'], ['progress', 'Application Progress', Clock3, 'progress']] },
@@ -158,8 +160,8 @@ export default function UAECustomerDashboard({ basePath = '/user/dashboard', log
                 />
               }
             />
-            <Route path="visas" element={pageComponents.visas ? React.createElement(pageComponents.visas, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'visas')} />} />
-            <Route path="banking" element={pageComponents.banking ? React.createElement(pageComponents.banking, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'banking')} />} />
+            <Route path="visas" element={pageComponents.visas ? React.createElement(pageComponents.visas, { company: activeCompany, companyId: activeCompanyId, navigate, onOpenSupport: openSupport }) : <VisasImmigration company={activeCompany} companyId={activeCompanyId} navigate={navigate} onOpenSupport={openSupport} />} />
+            <Route path="banking" element={pageComponents.banking ? React.createElement(pageComponents.banking, { company: activeCompany, companyId: activeCompanyId, navigate, onOpenSupport: openSupport }) : <BankingAssistance company={activeCompany} companyId={activeCompanyId} onOpenSupport={openSupport} />} />
             <Route path="appointments" element={pageComponents.appointments ? React.createElement(pageComponents.appointments, { company: activeCompany, companyId: activeCompanyId, navigate }) : <Placeholder page={pages.find(p => p.id === 'appointments')} />} />
             <Route path="support" element={<Navigate to={base} replace />} />
             <Route path="*" element={<Navigate to={base} replace />} />
