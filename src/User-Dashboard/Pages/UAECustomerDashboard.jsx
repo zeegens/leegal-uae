@@ -13,11 +13,20 @@ import AllCompanies from './AllCompanies';
 import VisasImmigration from './VisasImmigration';
 import BankingAssistance from './BankingAssistance';
 
+// const groups = [
+//   { title: 'WORKSPACE', items: [['companies', 'All Companies', Building2, 'companies'], ['overview', 'Overview', LayoutDashboard, ''], ['company', 'My Company', Building2, 'company'], ['progress', 'Application Progress', Clock3, 'progress']] },
+//   { title: 'COMPANY SETUP', items: [['shareholders', 'Shareholders & UBOs', UsersRound, 'shareholders'], ['documents', 'Documents', FolderOpen, 'documents'], ['approvals', 'Licences & Approvals', FileCheck2, 'approvals'], ['visas', 'Visas & Immigration', IdCard, 'visas']] },
+//   { title: 'ACCOUNT & SUPPORT', items: [['support', 'Help & Support', HelpCircle, 'support'], ['settings', 'Account Settings', Settings2, 'settings']] }
+// ];
+
+
 const groups = [
-  { title: 'WORKSPACE', items: [['companies', 'All Companies', Building2, 'companies'], ['overview', 'Overview', LayoutDashboard, ''], ['company', 'My Company', Building2, 'company'], ['progress', 'Application Progress', Clock3, 'progress']] },
-  { title: 'COMPANY SETUP', items: [['shareholders', 'Shareholders & UBOs', UsersRound, 'shareholders'], ['documents', 'Documents', FolderOpen, 'documents'], ['approvals', 'Licences & Approvals', FileCheck2, 'approvals'], ['visas', 'Visas & Immigration', IdCard, 'visas'], ['banking', 'Banking Assistance', Landmark, 'banking']] },
-  { title: 'ACCOUNT & SUPPORT', items: [['appointments', 'Appointments', CalendarDays, 'appointments'], ['support', 'Help & Support', HelpCircle, 'support'], ['settings', 'Account Settings', Settings2, 'settings']] }
+  { title: 'WORKSPACE', items: [['companies', 'All Companies', Building2, 'companies'], ['overview', 'Overview', LayoutDashboard, ''], ['company', 'My Company', Building2, 'company']] },
+  { title: 'COMPANY SETUP', items: [['shareholders', 'Shareholders & UBOs', UsersRound, 'shareholders'], ['documents', 'Documents', FolderOpen, 'documents'], ['approvals', 'Licences & Approvals', FileCheck2, 'approvals'], ['visas', 'Visas & Immigration', IdCard, 'visas']] },
+  { title: 'ACCOUNT & SUPPORT', items: [['support', 'Help & Support', HelpCircle, 'support'], ['settings', 'Account Settings', Settings2, 'settings']] }
 ];
+
+
 const pages = groups.flatMap(g => g.items).map(([id, label, icon, path]) => ({ id, label, icon, path }));
 function Placeholder({ page }) { const Icon = page.icon; return <section className="uc-placeholder"><div className="uc-placeholder-icon"><Icon size={28} /></div><span className="uc-eyebrow">LEEGAL UAE CLIENT PORTAL</span><h2>{page.label}</h2><p>This is your {page.label.toLowerCase()} page. We'll build its dedicated content here next.</p><span className="uc-ready"><span /> Route ready for development</span></section> }
 export default function UAECustomerDashboard({ basePath = '/user/dashboard', logoSrc, user = { name: 'Your Account', email: 'Client account' }, companyName = 'My UAE Company', companies: suppliedCompanies, initialCompanyId, onAddCompany, onCompanyChange, pageComponents = {}, onLogout, onSubmitSupport }) {
