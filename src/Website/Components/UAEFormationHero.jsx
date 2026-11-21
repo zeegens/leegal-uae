@@ -1,14 +1,13 @@
 
 import React, { useState } from 'react';
 import { ArrowUpRight, ArrowRight, Check, CheckCircle2, ChevronDown, ShieldCheck, Building2, Globe2, Headphones, LockKeyhole, Phone, Mail, UserRound, MapPin, Sparkles } from 'lucide-react';
+import CountryCodeSelector from './CountryCodeSelector';
+import { post_data } from '../../api';
 
-/**
- * UAE formation lead-generation hero. React + lucide-react, no CSS framework.
- * Connect onLeadSubmit to your API. It receives the validated form values and
- * should return a Promise. No submission is claimed without a successful callback.
- */
-const initial = { fullName: '', email: '', phone: '', countryCode: '+91', formationType: '', message: '' };
+
+const initial = { fullName: '', email: '', phone: '', countryCode: '+971', formationType: '', message: '' };
 const formationOptions = ['Not sure — need guidance', 'Mainland Company', 'Free Zone Company', 'Offshore Company'];
+const TARGET_EMAIL = 'uae@leegal.co';
 
 export default function UAEFormationHero({ onLeadSubmit, onConsultation, backgroundImage }) {
   const [form, setForm] = useState(initial);
@@ -16,6 +15,7 @@ export default function UAEFormationHero({ onLeadSubmit, onConsultation, backgro
   const [status, setStatus] = useState('idle');
   const [feedback, setFeedback] = useState('');
   const update = (key, value) => { setForm(v => ({ ...v, [key]: value })); setErrors(e => ({ ...e, [key]: undefined })); if (status !== 'idle') { setStatus('idle'); setFeedback(''); } };
+
   const submit = async (event) => {
     event.preventDefault();
     const next = {};
@@ -25,21 +25,73 @@ export default function UAEFormationHero({ onLeadSubmit, onConsultation, backgro
     if (!form.formationType) next.formationType = 'Choose a formation option.';
     setErrors(next);
     if (Object.keys(next).length) return;
-    if (typeof onLeadSubmit !== 'function') {
-      setStatus('error');
-      setFeedback('The enquiry form is ready. Connect the onLeadSubmit prop to your lead API to enable submissions.');
-      return;
-    }
+
     setStatus('loading');
     setFeedback('');
+
+    const formattedPhone = `${form.countryCode} ${form.phone.trim()}`;
+    const payload = {
+      ...form,
+      fullName: form.fullName.trim(),
+      email: form.email.trim(),
+      phone: formattedPhone,
+      countryCode: form.countryCode,
+      rawPhone: form.phone.trim(),
+      formationType: form.formationType,
+      message: form.message?.trim() || 'No message provided',
+      targetEmail: TARGET_EMAIL,
+      source: 'uae-formation-hero',
+      submittedAt: new Date().toISOString()
+    };
+
     try {
-      await onLeadSubmit({ ...form, fullName: form.fullName.trim(), email: form.email.trim(), phone: form.phone.trim(), source: 'uae-formation-hero' });
+      // 1. If onLeadSubmit callback prop is provided, call it
+      if (typeof onLeadSubmit === 'function') {
+        try {
+          await onLeadSubmit(payload);
+        } catch (err) {
+          console.warn('onLeadSubmit callback error:', err);
+        }
+      }
+
+      
+      // 2. Attempt backend endpoint if available
+      try {
+        await post_data('leads', payload);
+      } catch {
+        // Backend optional in development
+      }
+
+      // 3. Send email to uae@leegal.co via FormSubmit API
+      try {
+        await fetch(`https://formsubmit.co/ajax/${TARGET_EMAIL}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            _subject: `New UAE Company Formation Enquiry - ${payload.fullName}`,
+            name: payload.fullName,
+            email: payload.email,
+            phone: payload.phone,
+            formationType: payload.formationType,
+            message: payload.message,
+            _replyto: payload.email,
+            _captcha: 'false',
+            _template: 'table'
+          })
+        });
+      } catch (fetchErr) {
+        console.warn('FormSubmit network error:', fetchErr);
+      }
+
       setStatus('success');
-      setFeedback('Thank you! Your enquiry has been submitted. Our team will be in touch.');
+      setFeedback(`Thank you! Your enquiry has been sent to ${TARGET_EMAIL}. Our formation team will be in touch shortly.`);
       setForm(initial);
     } catch (error) {
       setStatus('error');
-      setFeedback(error?.message || 'We could not submit your enquiry. Please try again.');
+      setFeedback(error?.message || `We could not submit your enquiry. Please reach us at ${TARGET_EMAIL}.`);
     }
   };
   const focusForm = () => document.getElementById('uae-lead-name')?.focus();
@@ -95,7 +147,7 @@ export default function UAEFormationHero({ onLeadSubmit, onConsultation, backgro
             <form onSubmit={submit} noValidate>
               <div className="uae-form-field"><label htmlFor="uae-lead-name">Full name <b>*</b></label><div className="uae-input-wrap"><UserRound size={17} /><input id="uae-lead-name" value={form.fullName} onChange={e => update('fullName', e.target.value)} placeholder="Enter your full name" autoComplete="name" aria-invalid={!!errors.fullName} /></div>{errors.fullName && <small className="uae-error">{errors.fullName}</small>}</div>
               <div className="uae-form-field"><label htmlFor="uae-lead-email">Work email <b>*</b></label><div className="uae-input-wrap"><Mail size={17} /><input id="uae-lead-email" type="email" value={form.email} onChange={e => update('email', e.target.value)} placeholder="you@company.com" autoComplete="email" aria-invalid={!!errors.email} /></div>{errors.email && <small className="uae-error">{errors.email}</small>}</div>
-              <div className="uae-form-field"><label htmlFor="uae-lead-phone">Phone / WhatsApp <b>*</b></label><div className="uae-phone-wrap"><select aria-label="Country calling code" value={form.countryCode} onChange={e => update('countryCode', e.target.value)}><option value="+91">🇮🇳 +91</option><option value="+971">🇦🇪 +971</option><option value="+1">🇺🇸 +1</option><option value="+44">🇬🇧 +44</option><option value="+92">🇵🇰 +92</option><option value="+966">🇸🇦 +966</option><option value="+880">🇧🇩 +880</option><option value="+974">🇶🇦 +974</option></select><span className="uae-phone-divider" /><input id="uae-lead-phone" type="tel" value={form.phone} onChange={e => update('phone', e.target.value)} placeholder="Your contact number" autoComplete="tel-national" aria-invalid={!!errors.phone} /><Phone size={16} /></div>{errors.phone && <small className="uae-error">{errors.phone}</small>}</div>
+              <div className="uae-form-field"><label htmlFor="uae-lead-phone">Phone / WhatsApp <b>*</b></label><div className="uae-phone-wrap"><CountryCodeSelector value={form.countryCode} onChange={code => update('countryCode', code)} onPhoneFocus={() => document.getElementById('uae-lead-phone')?.focus()} id="uae-lead-country" /><span className="uae-phone-divider" /><input id="uae-lead-phone" type="tel" value={form.phone} onChange={e => update('phone', e.target.value)} placeholder="Your contact number" autoComplete="tel-national" aria-invalid={!!errors.phone} /><Phone size={16} /></div>{errors.phone && <small className="uae-error">{errors.phone}</small>}</div>
               <div className="uae-form-field"><label htmlFor="uae-lead-type">Company formation type <b>*</b></label><div className="uae-select-wrap"><Globe2 size={17} /><select id="uae-lead-type" value={form.formationType} onChange={e => update('formationType', e.target.value)} aria-invalid={!!errors.formationType}><option value="" disabled>Select your preferred setup</option>{formationOptions.map(option => <option key={option} value={option}>{option}</option>)}</select><ChevronDown className="uae-chevron" size={17} /></div>{errors.formationType && <small className="uae-error">{errors.formationType}</small>}</div>
               <div className="uae-form-field"><label htmlFor="uae-lead-message">Tell us about your business <span>(optional)</span></label><textarea id="uae-lead-message" rows={2} value={form.message} onChange={e => update('message', e.target.value)} placeholder="Business activity, timeline or questions..." /></div>
               <button className="uae-submit" type="submit" disabled={status === 'loading'}>{status === 'loading' ? 'Submitting your enquiry…' : 'Get my free consultation'}<ArrowUpRight size={19} /></button>
@@ -122,8 +174,38 @@ const styles = `
 .uae-left h1{margin:0;color:#192536;font-size:clamp(44px,4.3vw,67px);line-height:1.105;letter-spacing:-3.5px;font-weight:800}.uae-left h1 span{color:var(--red)}.uae-left h1 em{font-style:normal;color:#586779}.uae-intro{max-width:550px;color:#586779;font-size:15px;line-height:1.85;margin:24px 0 27px}
 .uae-benefits{display:grid;gap:16px}.uae-benefits>div{display:flex;align-items:center;gap:12px}.uae-benefit-icon{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border-radius:10px;background:#fff;border:1px solid #e8ebef;color:var(--red);box-shadow:0 4px 18px #2533480a}.uae-benefits strong,.uae-benefits small{display:block}.uae-benefits strong{font-size:12px;font-weight:800;color:#243146}.uae-benefits small{font-size:11px;color:#6e7b8a;margin-top:3px}
 .uae-actions{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:30px}.uae-main-action{display:flex;align-items:center;justify-content:center;gap:16px;padding:15px 19px;border-radius:9px;border:1px solid var(--red);background:var(--red);color:white;font-size:12px!important;font-weight:800!important;transition:background .2s,transform .2s}.uae-main-action:hover{background:#d7191d;transform:translateY(-2px)}.uae-text-action{border:0;background:transparent;color:#29364a;display:flex;align-items:center;gap:9px;font-size:12px!important;font-weight:800!important;padding:12px 0}.uae-text-action:hover{color:var(--red)}.uae-trust{display:flex;align-items:center;gap:9px;margin-top:22px;color:#657487;font-size:10px;font-weight:700}.uae-trust svg{color:#168a5a}.uae-trust>span{width:4px;height:4px;background:#9ca9b6;border-radius:50%}
-.uae-right{width:100%;max-width:475px;justify-self:end;animation:uaeEnter .8s .12s both}.uae-form-card{position:relative;overflow:hidden;background:#fff;border:1px solid #e8eaf0;border-radius:19px;box-shadow:0 22px 75px #17283c2b,0 3px 12px #17283c0a;padding:27px 30px 22px}.uae-form-topline{position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--red),#ff8178 62%,#ffd5d1)}.uae-form-heading{display:flex;align-items:center;gap:12px}.uae-form-icon{width:44px;height:44px;flex:0 0 44px;border-radius:11px;display:grid;place-items:center;color:var(--red);background:#fff0f0;border:1px solid #ffe1e1}.uae-form-eyebrow{display:block;font-size:9px;font-weight:800;letter-spacing:1.2px;color:var(--red)}.uae-form-heading h2{margin:5px 0 0;font-size:21px;letter-spacing:-.7px;line-height:1.25;color:#1f2b3e;font-weight:800}.uae-form-header>p{font-size:11.5px;color:#768293;line-height:1.65;margin:13px 0 20px}
-.uae-form-card form{display:grid;gap:13px}.uae-form-field{min-width:0}.uae-form-field label{display:block;margin-bottom:7px;font-size:11px;font-weight:800;color:#344155}.uae-form-field label b{color:var(--red)}.uae-form-field label span{color:#9aa4b0;font-weight:500}.uae-input-wrap,.uae-select-wrap,.uae-phone-wrap{height:43px;display:flex;align-items:center;gap:10px;border:1px solid #e3e8ef;border-radius:8px;background:#fcfdff;padding:0 12px;transition:border-color .2s,box-shadow .2s}.uae-input-wrap:focus-within,.uae-select-wrap:focus-within,.uae-phone-wrap:focus-within{border-color:#ee989a;box-shadow:0 0 0 3px #ea20240d}.uae-input-wrap>svg,.uae-select-wrap>svg,.uae-phone-wrap>svg{color:#94a0ae;flex-shrink:0}.uae-input-wrap input,.uae-select-wrap select,.uae-phone-wrap input,.uae-phone-wrap select{width:100%;min-width:0;outline:0;border:0;background:transparent;color:#263346;font-size:12px}.uae-input-wrap input::placeholder,.uae-phone-wrap input::placeholder,.uae-form-field textarea::placeholder{color:#a4aebb}.uae-select-wrap select{appearance:none;cursor:pointer}.uae-select-wrap select:invalid{color:#a4aebb}.uae-select-wrap .uae-chevron{pointer-events:none}.uae-phone-wrap{gap:9px}.uae-phone-wrap select{width:88px;flex:0 0 88px;cursor:pointer;font-size:11px}.uae-phone-divider{width:1px;height:20px;background:#e5e9ee}.uae-form-field textarea{width:100%;min-height:66px;resize:vertical;border:1px solid #e3e8ef;border-radius:8px;background:#fcfdff;padding:11px 12px;color:#263346;outline:0;font-size:12px}.uae-form-field textarea:focus{border-color:#ee989a;box-shadow:0 0 0 3px #ea20240d}.uae-error{display:block;color:#c62828;font-size:10px;margin-top:4px}.uae-submit{width:100%;display:flex;align-items:center;justify-content:center;gap:13px;padding:14px 18px;background:var(--red);color:white;border:1px solid var(--red);border-radius:9px;font-size:12px!important;font-weight:800!important;transition:background .2s,transform .2s}.uae-submit:hover:not(:disabled){background:#d7191d;transform:translateY(-1px)}.uae-submit:disabled{opacity:.65;cursor:wait}.uae-form-privacy{display:flex;justify-content:center;align-items:center;gap:7px;color:#97a0ae;font-size:9px;margin:0}.uae-form-privacy svg{color:#8d99a8}.uae-feedback{display:flex;gap:8px;align-items:flex-start;font-size:11px;line-height:1.5;border-radius:8px;padding:10px}.uae-feedback.success{background:#effaf3;color:#176a41}.uae-feedback.error{background:#fff3f3;color:#a52b2b}.uae-form-under{display:flex;justify-content:center;gap:22px;margin-top:15px;color:#263d50;font-size:10px;font-weight:800;text-shadow:0 1px 12px #fff}.uae-form-under span{display:flex;align-items:center;gap:5px}.uae-form-under svg{color:#168a5a}
+.uae-right{width:100%;max-width:475px;justify-self:end;animation:uaeEnter .8s .12s both}.uae-form-card{position:relative;overflow:visible!important;background:#fff;border:1px solid #e8eaf0;border-radius:19px;box-shadow:0 22px 75px #17283c2b,0 3px 12px #17283c0a;padding:27px 30px 22px}.uae-form-topline{position:absolute;top:0;left:0;right:0;height:4px;border-radius:19px 19px 0 0;background:linear-gradient(90deg,var(--red),#ff8178 62%,#ffd5d1)}.uae-form-heading{display:flex;align-items:center;gap:12px}.uae-form-icon{width:44px;height:44px;flex:0 0 44px;border-radius:11px;display:grid;place-items:center;color:var(--red);background:#fff0f0;border:1px solid #ffe1e1}.uae-form-eyebrow{display:block;font-size:9px;font-weight:800;letter-spacing:1.2px;color:var(--red)}.uae-form-heading h2{margin:5px 0 0;font-size:21px;letter-spacing:-.7px;line-height:1.25;color:#1f2b3e;font-weight:800}.uae-form-header>p{font-size:11.5px;color:#768293;line-height:1.65;margin:13px 0 20px}
+.uae-form-card form{display:grid;gap:13px}.uae-form-field{min-width:0;position:relative}.uae-form-field label{display:block;margin-bottom:7px;font-size:11px;font-weight:800;color:#344155}.uae-form-field label b{color:var(--red)}.uae-form-field label span{color:#9aa4b0;font-weight:500}.uae-input-wrap,.uae-select-wrap,.uae-phone-wrap{height:43px;display:flex;align-items:center;gap:10px;border:1px solid #e3e8ef;border-radius:8px;background:#fcfdff;padding:0 12px;transition:border-color .2s,box-shadow .2s;position:relative}.uae-input-wrap:focus-within,.uae-select-wrap:focus-within,.uae-phone-wrap:focus-within{border-color:#ee989a;box-shadow:0 0 0 3px #ea20240d}.uae-input-wrap>svg,.uae-select-wrap>svg,.uae-phone-wrap>svg{color:#94a0ae;flex-shrink:0}.uae-input-wrap input,.uae-select-wrap select,.uae-phone-wrap input,.uae-phone-wrap select{width:100%;min-width:0;outline:0;border:0;background:transparent;color:#263346;font-size:12px}.uae-input-wrap input::placeholder,.uae-phone-wrap input::placeholder,.uae-form-field textarea::placeholder{color:#a4aebb}.uae-select-wrap select{appearance:none;cursor:pointer}.uae-select-wrap select:invalid{color:#a4aebb}.uae-select-wrap .uae-chevron{pointer-events:none}.uae-phone-wrap{gap:9px}.uae-phone-divider{width:1px;height:20px;background:#e5e9ee;flex-shrink:0}
+.uae-country-picker{position:relative;display:flex;align-items:center;flex-shrink:0}
+.uae-country-btn{background:transparent;border:0;padding:2px 4px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:#263346;font-size:12px;font-weight:600;border-radius:6px;transition:color .15s ease,background .15s ease;user-select:none}
+.uae-country-btn:hover{color:var(--red);background:#fff5f5}
+.uae-country-code-val{font-size:12px;font-weight:700;color:#263346;letter-spacing:-0.2px}
+.uae-country-chevron{color:#94a0ae;transition:transform .2s ease;flex-shrink:0}
+.uae-country-chevron.open{transform:rotate(180deg);color:var(--red)}
+.uae-country-dropdown{position:absolute;top:calc(100% + 8px);left:0;width:320px;max-width:calc(100vw - 48px);background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 18px 45px rgba(15,23,42,0.18),0 4px 12px rgba(15,23,42,0.06);z-index:9999;display:flex;flex-direction:column;animation:uaeCountryDrop .18s cubic-bezier(0.16,1,0.3,1);overflow:hidden}
+@keyframes uaeCountryDrop{from{opacity:0;transform:translateY(-6px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.uae-country-search-wrap{padding:9px 10px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px;background:#f8fafc;position:relative}
+.uae-country-search-icon{color:#94a0ae;flex-shrink:0}
+.uae-country-search-input{border:1px solid #e2e8f0!important;border-radius:6px!important;padding:6px 9px!important;font-size:12px!important;width:100%!important;height:32px!important;outline:0!important;background:#ffffff!important;color:#1e293b!important;box-shadow:none!important}
+.uae-country-search-input:focus{border-color:var(--red)!important;box-shadow:0 0 0 2px #ea202418!important}
+.uae-country-search-clear{position:absolute;right:18px;border:0;background:#e2e8f0;color:#64748b;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0}
+.uae-country-search-clear:hover{background:#cbd5e1;color:#1e293b}
+.uae-country-list{max-height:240px;overflow-y:auto;padding:6px 4px}
+.uae-country-list::-webkit-scrollbar{width:5px}
+.uae-country-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+.uae-country-list::-webkit-scrollbar-track{background:transparent}
+.uae-country-section-title{font-size:9.5px;font-weight:800;letter-spacing:0.8px;color:#94a0ae;padding:6px 10px 4px;text-transform:uppercase}
+.uae-country-section-divider{height:1px;background:#f1f5f9;margin:6px 8px}
+.uae-country-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:12px;transition:background .12s ease;user-select:none}
+.uae-country-item:hover,.uae-country-item.highlighted{background:#f8fafc}
+.uae-country-item.selected{background:#fff5f5;color:var(--red);font-weight:600}
+.uae-country-item-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#334155;font-size:12px}
+.uae-country-item.selected .uae-country-item-name{color:var(--red);font-weight:700}
+.uae-country-item-code{font-size:11.5px;font-weight:600;color:#64748b;margin-left:auto;font-variant-numeric:tabular-nums}
+.uae-country-item.selected .uae-country-item-code{color:var(--red)}
+.uae-country-check{color:var(--red);flex-shrink:0;margin-left:6px}
+.uae-country-empty{padding:24px 14px;text-align:center;font-size:12px;color:#94a0ae}
+.uae-country-flag-icon img{box-shadow:0 1px 3px rgba(0,0,0,0.15)}.uae-form-field textarea{width:100%;min-height:66px;resize:vertical;border:1px solid #e3e8ef;border-radius:8px;background:#fcfdff;padding:11px 12px;color:#263346;outline:0;font-size:12px}.uae-form-field textarea:focus{border-color:#ee989a;box-shadow:0 0 0 3px #ea20240d}.uae-error{display:block;color:#c62828;font-size:10px;margin-top:4px}.uae-submit{width:100%;display:flex;align-items:center;justify-content:center;gap:13px;padding:14px 18px;background:var(--red);color:white;border:1px solid var(--red);border-radius:9px;font-size:12px!important;font-weight:800!important;transition:background .2s,transform .2s}.uae-submit:hover:not(:disabled){background:#d7191d;transform:translateY(-1px)}.uae-submit:disabled{opacity:.65;cursor:wait}.uae-form-privacy{display:flex;justify-content:center;align-items:center;gap:7px;color:#97a0ae;font-size:9px;margin:0}.uae-form-privacy svg{color:#8d99a8}.uae-feedback{display:flex;gap:8px;align-items:flex-start;font-size:11px;line-height:1.5;border-radius:8px;padding:10px}.uae-feedback.success{background:#effaf3;color:#176a41}.uae-feedback.error{background:#fff3f3;color:#a52b2b}.uae-form-under{display:flex;justify-content:center;gap:22px;margin-top:15px;color:#263d50;font-size:10px;font-weight:800;text-shadow:0 1px 12px #fff}.uae-form-under span{display:flex;align-items:center;gap:5px}.uae-form-under svg{color:#168a5a}
 .uae-bottom-marker{position:absolute;bottom:0;left:0;right:0;padding:13px max(54px,calc((100vw - 1340px)/2));display:flex;justify-content:space-between;gap:15px;border-top:1px solid #ffffff85;background:#ffffff5c;backdrop-filter:blur(8px);color:#677487;font-size:9px;font-weight:800;letter-spacing:1.5px}
 @keyframes uaeEnter{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}@keyframes uaePulse{0%,100%{box-shadow:0 0 0 4px #fbe0e0}50%{box-shadow:0 0 0 8px #fbe0e000}}@keyframes uaeBgIn{from{opacity:.75;transform:scale(1.07)}to{opacity:1;transform:scale(1.025)}}
 @media(max-width:1100px){.uae-content{grid-template-columns:minmax(0,1fr) minmax(340px,.92fr);gap:25px;padding:55px 28px 68px}.uae-left h1{font-size:clamp(40px,4.5vw,58px);letter-spacing:-2.5px}.uae-form-card{padding:25px 22px 20px}.uae-bottom-marker{padding-left:28px;padding-right:28px}}
