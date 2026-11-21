@@ -15,6 +15,11 @@ import Home from "./Website/Pages/Home";
 import SignUp from "./Website/Pages/SignUp";
 import UAECustomerDashboard from "./User-Dashboard/Pages/UAECustomerDashboard";
 import SignIn from "./User-Dashboard/Pages/SignIn";
+import {
+  PrivacyPolicy,
+  TermsAndConditions
+} from "./Website/Pages/UAELegalPages";
+import UAEComingSoon from "./Website/Pages/UAEComingSoon";
 
 function App() {
   const [count, setCount] = useState(0)
@@ -36,13 +41,24 @@ function App() {
           />
 
           <Route
-            path="/create-account"
-            element={<SignUp />}
+            path="/signup"
+            element={<UAEComingSoon />}
           />
 
           <Route
             path="/login"
-            element={<SignIn />}
+            element={<UAEComingSoon />}
+          />
+
+
+          <Route
+            path="/privacy-policy"
+            element={<PrivacyPolicy />}
+          />
+
+          <Route
+            path="/terms-and-conditions"
+            element={<TermsAndConditions />}
           />
 
         </Routes>

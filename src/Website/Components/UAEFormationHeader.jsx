@@ -16,10 +16,10 @@ const menus = [
     heading: "Find the right way to start in the UAE.",
     description: "Explore company formation routes and get practical guidance for your business activity.",
     links: [
-      { title: "Mainland Company", description: "Explore onshore setup and local market opportunities.", href: "#jurisdictions", icon: Building2 },
-      { title: "Free Zone Company", description: "Discover zone-specific packages and business ecosystems.", href: "#free-zone-benefits", icon: Layers3 },
-      { title: "Offshore Company", description: "Understand offshore structures and their permitted uses.", href: "#jurisdictions", icon: Globe2 },
-      { title: "Compare Jurisdictions", description: "See the key considerations before choosing your route.", href: "#jurisdictions", icon: Compass },
+      { title: "Mainland Company", description: "Explore onshore setup and local market opportunities.", href: "/#jurisdictions", icon: Building2 },
+      { title: "Free Zone Company", description: "Discover zone-specific packages and business ecosystems.", href: "/#free-zone-benefits", icon: Layers3 },
+      { title: "Offshore Company", description: "Understand offshore structures and their permitted uses.", href: "/#jurisdictions", icon: Globe2 },
+      { title: "Compare Jurisdictions", description: "See the key considerations before choosing your route.", href: "/#jurisdictions", icon: Compass },
     ],
   },
   {
@@ -27,10 +27,10 @@ const menus = [
     heading: "Guidance built around your ambitions.",
     description: "Learn how our approach helps founders navigate the UAE formation process.",
     links: [
-      { title: "Why Choose Us", description: "How we help you make informed formation decisions.", href: "#why-choose-us", icon: ShieldCheck },
-      { title: "Our Process", description: "Understand the steps from enquiry to setup.", href: "#process", icon: FileCheck2 },
-      { title: "Our Achievements", description: "Discover our journey and client experiences.", href: "#achievements", icon: Sparkles },
-      { title: "Frequently Asked Questions", description: "Answers to common UAE company setup questions.", href: "#faq", icon: CircleHelp },
+      { title: "Why Choose Us", description: "How we help you make informed formation decisions.", href: "/#why-choose-us", icon: ShieldCheck },
+      { title: "Our Process", description: "Understand the steps from enquiry to setup.", href: "/#process", icon: FileCheck2 },
+      { title: "Our Achievements", description: "Discover our journey and client experiences.", href: "/#achievements", icon: Sparkles },
+      { title: "Frequently Asked Questions", description: "Answers to common UAE company setup questions.", href: "/#faq", icon: CircleHelp },
     ],
   },
 ];
@@ -44,8 +44,8 @@ export default function UAEFormationHeader({
   logoSrc,
   loginHref = "/login",
   signupHref = "/signup",
-  homeHref = "#home",
-  email = "info@uae.leegal.co",
+  homeHref = "/",
+  email = "uae@leegal.co",
   onConsultationClick,
   onLoginClick,
   onSignupClick,
@@ -57,6 +57,46 @@ export default function UAEFormationHeader({
   const headerRef = useRef(null);
   const firstMenuRef = useRef(null);
 
+  // Existing homepage components use heading IDs rather than section IDs.
+  const findSection = (id) => {
+    const direct = document.getElementById(id);
+    if (direct) return direct;
+    const aliases = {
+      process: ['lp-process-title'], faq: ['lf-faq-title'],
+      jurisdictions: ['uj-title'], 'free-zone-benefits': ['lfz-title'],
+      achievements: ['la2-heading'], 'why-choose-us': ['leegal-why-title', 'lc-why-title'],
+      contact: ['uae-lead-name'], home: ['uae-hero-title']
+    };
+    for (const name of aliases[id] || []) {
+      const node = document.getElementById(name);
+      if (node) return id === 'contact' ? node : node.closest('section') || node;
+    }
+    return null;
+  };
+  const scrollToSection = (id) => {
+    const section = findSection(id);
+    if (!section) return false;
+    const offset = headerRef.current?.getBoundingClientRect().height || 100;
+    window.scrollTo({ top: Math.max(0, section.getBoundingClientRect().top + window.scrollY - offset - 16), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+    return true;
+  };
+  useEffect(() => {
+    let timer;
+    const jump = () => {
+      clearTimeout(timer);
+      if (window.location.pathname !== '/' || !window.location.hash) return;
+      const id = window.location.hash.slice(1);
+      let attempts = 0;
+      const retry = () => {
+        if (!scrollToSection(id) && ++attempts < 100) timer = setTimeout(retry, 100);
+      };
+      timer = setTimeout(retry, 100);
+    };
+    jump();
+    window.addEventListener('hashchange', jump);
+    window.addEventListener('popstate', jump);
+    return () => { clearTimeout(timer); window.removeEventListener('hashchange', jump); window.removeEventListener('popstate', jump); };
+  }, []);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 14);
     onScroll();
@@ -85,12 +125,23 @@ export default function UAEFormationHeader({
   }, [openMenu]);
 
   const closeAll = () => { setOpenMenu(null); setMobileOpen(false); };
+  // On the homepage, scroll to the section with space for the sticky header.
+  // On other routes, let the normal /#section link navigate back home first.
+  const handleSectionLink = (event, href) => {
+    closeAll();
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    if (!href.startsWith('/#') || window.location.pathname !== '/') return;
+    event.preventDefault();
+    const id = href.slice(2);
+    if (window.location.hash !== '#' + id) window.history.pushState(window.history.state, '', href);
+    requestAnimationFrame(() => scrollToSection(id));
+  };
   const consult = () => {
     closeAll();
     if (onConsultationClick) return onConsultationClick();
     const field = document.getElementById("uae-lead-name");
     if (field) { field.scrollIntoView({ behavior: "smooth", block: "center" }); field.focus({ preventScroll: true }); }
-    else document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+    else if (!scrollToSection("contact")) window.location.assign("/#contact");
   };
   const selected = menus.find(m => m.key === openMenu);
   const authButton = (kind, className) => {
@@ -112,13 +163,13 @@ export default function UAEFormationHeader({
             <div className="lh-utility-right">
               <a href={`mailto:${email}`}><Mail size={13} />{email}</a>
               <span className="lh-utility-divider" />
-              <a href="#contact" onClick={closeAll}>Contact us <ArrowUpRight size={13} /></a>
+              <a href="/#contact" onClick={e => handleSectionLink(e, "/#contact")}>Contact us <ArrowUpRight size={13} /></a>
             </div>
           </div>
         </div>
         <div className="lh-main">
           <div className="lh-container lh-main-inner">
-            <a href={homeHref} className="lh-logo-link" aria-label="Leegal home" onClick={closeAll}><Logo logoSrc={logoSrc} /></a>
+            <a href={homeHref} className="lh-logo-link" aria-label="Leegal home" onClick={closeAll}><Logo logoSrc={'https://www.leegal.co/images/Leegal%20LLC%20logo%20%E2%80%93%20US%20company%20formation%20service%20for%20global%20entrepreneurs.svg'} /></a>
             <nav className="lh-desktop-nav" aria-label="Primary navigation">
               <a href={homeHref} className="lh-nav-link" onMouseEnter={() => setOpenMenu(null)} onClick={closeAll}>Home</a>
               {menus.map(m => (
@@ -128,8 +179,8 @@ export default function UAEFormationHeader({
                   {m.title}<ChevronDown size={15} />
                 </button>
               ))}
-              <a href="#process" className="lh-nav-link" onMouseEnter={() => setOpenMenu(null)} onClick={closeAll}>How It Works</a>
-              <a href="#faq" className="lh-nav-link" onMouseEnter={() => setOpenMenu(null)} onClick={closeAll}>FAQs</a>
+              <a href="/#process" className="lh-nav-link" onMouseEnter={() => setOpenMenu(null)} onClick={e => handleSectionLink(e, "/#process")}>How It Works</a>
+              <a href="/#faq" className="lh-nav-link" onMouseEnter={() => setOpenMenu(null)} onClick={e => handleSectionLink(e, "/#faq")}>FAQs</a>
             </nav>
             <div className="lh-desktop-actions">
               {authButton("login", "lh-login")}
@@ -152,7 +203,7 @@ export default function UAEFormationHeader({
               <div className="lh-mega-links">
                 {selected.links.map((link, i) => {
                   const Icon = link.icon;
-                  return <a key={link.title} ref={i === 0 ? firstMenuRef : null} href={link.href} onClick={closeAll} className="lh-mega-item">
+                  return <a key={link.title} ref={i === 0 ? firstMenuRef : null} href={link.href} onClick={e => handleSectionLink(e, link.href)} className="lh-mega-item">
                     <span className="lh-mega-icon"><Icon size={21} strokeWidth={1.8} /></span>
                     <span className="lh-mega-text"><strong>{link.title}</strong><small>{link.description}</small></span>
                     <ArrowUpRight size={17} className="lh-mega-arrow" />
@@ -179,11 +230,11 @@ export default function UAEFormationHeader({
               <button type="button" onClick={() => setMobileGroup(v => v === m.key ? null : m.key)}
                 aria-expanded={mobileGroup === m.key}>{m.title}<ChevronDown className={mobileGroup === m.key ? "lh-rotated" : ""} size={17} /></button>
               {mobileGroup === m.key && <div className="lh-mobile-group-links">
-                {m.links.map(link => <a href={link.href} key={link.title} onClick={closeAll}>{link.title}<ChevronRight size={15} /></a>)}
+                {m.links.map(link => <a href={link.href} key={link.title} onClick={e => handleSectionLink(e, link.href)}>{link.title}<ChevronRight size={15} /></a>)}
               </div>}
             </div>)}
-            <a href="#process" onClick={closeAll} className="lh-mobile-simple">How It Works <ArrowUpRight size={17} /></a>
-            <a href="#faq" onClick={closeAll} className="lh-mobile-simple">FAQs <ArrowUpRight size={17} /></a>
+            <a href="/#process" onClick={e => handleSectionLink(e, "/#process")} className="lh-mobile-simple">How It Works <ArrowUpRight size={17} /></a>
+            <a href="/#faq" onClick={e => handleSectionLink(e, "/#faq")} className="lh-mobile-simple">FAQs <ArrowUpRight size={17} /></a>
             <a href={`mailto:${email}`} className="lh-mobile-email"><Mail size={17} />{email}</a>
           </div>
           <div className="lh-mobile-actions">

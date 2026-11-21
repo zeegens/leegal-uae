@@ -56,7 +56,6 @@ const socials = [
   { key: 'facebook', label: 'Facebook', icon: Facebook },
   { key: 'instagram', label: 'Instagram', icon: Instagram },
   { key: 'linkedin', label: 'LinkedIn', icon: Linkedin },
-  { key: 'youtube', label: 'YouTube', icon: Youtube },
 ];
 
 function FooterLink({ href, children, className = '' }) {
@@ -74,8 +73,8 @@ export default function UAEFormationFooter({
   whatsapp = '',
   address = '',
   navigation = defaultGroups,
-  privacyUrl = '',
-  termsUrl = '',
+  privacyUrl = '/privacy-policy',
+  termsUrl = '/terms-and-conditions',
   cookiesUrl = '',
   copyrightYear = new Date().getFullYear(),
 }) {
@@ -88,6 +87,7 @@ export default function UAEFormationFooter({
 
   const whatsappHref = whatsapp ? `https://wa.me/${String(whatsapp).replace(/\D/g, '')}` : '';
   const hasContact = Boolean(email || phone || whatsapp || address);
+  const resolvedSocialLinks = { instagram: "https://www.instagram.com/leegal.uae/", ...socialLinks };
 
   return <footer className="leegal-uae-footer-footer" aria-label="Leegal website footer">
     <style>{styles}</style>
@@ -115,8 +115,8 @@ export default function UAEFormationFooter({
             <p>Make confident decisions about starting your company in the UAE. We help founders understand the options, paperwork, and practical steps involved.</p>
             <div className="leegal-uae-footer-brand-meta"><span className="leegal-uae-footer-brand-mark"><Globe2 size={17} /></span><span>Guidance for UAE company formation</span></div>
             <div className="leegal-uae-footer-socials" aria-label="Social media">
-              {socials.map(({ key, label, icon: Icon }) => socialLinks[key] ?
-                <a key={key} href={socialLinks[key]} target="_blank" rel="noopener noreferrer" aria-label={`Leegal on ${label}`} title={label}><Icon size={18} /></a>
+              {socials.map(({ key, label, icon: Icon }) => resolvedSocialLinks[key] ?
+                <a key={key} href={resolvedSocialLinks[key]} target="_blank" rel="noopener noreferrer" aria-label={`Leegal on ${label}`} title={label}><Icon size={18} /></a>
                 : <span key={key} className="leegal-uae-footer-social-disabled" aria-label={`${label} link not configured`} title={`${label} link not configured`}><Icon size={18} /></span>)}
             </div>
           </div>
@@ -139,7 +139,6 @@ export default function UAEFormationFooter({
           <div className="leegal-uae-footer-legal">
             <FooterLink href={privacyUrl}>Privacy Policy</FooterLink>
             <FooterLink href={termsUrl}>Terms & Conditions</FooterLink>
-            <FooterLink href={cookiesUrl}>Cookie Policy</FooterLink>
           </div>
           <button className="leegal-uae-footer-backtop" type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Back to top">Back to top <ArrowUpRight size={15} /></button>
         </div>
@@ -163,7 +162,7 @@ const styles = `
 .leegal-uae-footer-main{background:#192536;padding:90px 32px 28px;position:relative}.leegal-uae-footer-main:before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:#ffffff08}.leegal-uae-footer-content{width:100%;max-width:1280px;margin:0 auto;position:relative;min-width:0}
 .leegal-uae-footer-topline{display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid #ffffff1c;padding-bottom:22px;margin-bottom:44px;font-size:10px;font-weight:800;letter-spacing:1.6px;color:#8f9eb2}
 .leegal-uae-footer-columns{display:grid;grid-template-columns:minmax(0,1.65fr) repeat(3,minmax(0,1fr)) minmax(0,1.25fr);gap:clamp(20px,2.5vw,42px);width:100%;padding-bottom:58px}
-.leegal-uae-footer-logo-text{font-size:35px;font-weight:800;letter-spacing:-1.9px;line-height:1;color:#fff}.leegal-uae-footer-logo-text span{color:#EA2024}.leegal-uae-footer-logo-img{max-width:155px;max-height:54px;object-fit:contain;object-position:left center}
+.leegal-uae-footer-logo-text{font-size:35px;font-weight:600;letter-spacing:-1.9px;line-height:1;color:#fff}.leegal-uae-footer-logo-text span{color:#EA2024}.leegal-uae-footer-logo-img{max-width:155px;max-height:54px;object-fit:contain;object-position:left center}
 .leegal-uae-footer-brand p{font-size:13px;line-height:1.85;color:#aeb9c9;max-width:290px;margin:23px 0 19px}.leegal-uae-footer-brand-meta{display:flex;align-items:center;gap:10px;font-size:11px;color:#c6ceda}.leegal-uae-footer-brand-mark{width:30px;height:30px;border:1px solid #ffffff2b;display:grid;place-items:center;border-radius:7px;color:#ff7073}
 .leegal-uae-footer-socials{display:flex;gap:9px;margin-top:25px;flex-wrap:wrap}.leegal-uae-footer-socials a,.leegal-uae-footer-social-disabled{width:39px;height:39px;display:grid;place-items:center;border:1px solid #ffffff26;border-radius:8px;background:#ffffff09;color:#fff;transition:background .2s,border-color .2s,transform .2s}.leegal-uae-footer-socials a:hover{background:#EA2024;border-color:#EA2024;transform:translateY(-3px)}.leegal-uae-footer-social-disabled{opacity:.38;cursor:default}
 .leegal-uae-footer-nav h3,.leegal-uae-footer-contact h3{font-size:14px;font-weight:800;margin:7px 0 24px;color:#fff}.leegal-uae-footer-nav ul{list-style:none;padding:0;margin:0;display:grid;gap:16px}.leegal-uae-footer-nav li a,.leegal-uae-footer-nav li .leegal-uae-footer-inactive{font-size:12px;line-height:1.65;color:#aeb9c9;display:inline-flex;gap:5px;align-items:flex-start;transition:color .2s,transform .2s}.leegal-uae-footer-nav li a svg,.leegal-uae-footer-nav li .leegal-uae-footer-inactive svg{flex-shrink:0;margin-top:2px;color:#EA2024}.leegal-uae-footer-nav li a:hover{color:#fff;transform:translateX(3px)}
