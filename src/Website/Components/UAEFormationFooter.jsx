@@ -87,7 +87,7 @@ export default function UAEFormationFooter({
 
   const whatsappHref = whatsapp ? `https://wa.me/${String(whatsapp).replace(/\D/g, '')}` : '';
   const hasContact = Boolean(email || phone || whatsapp || address);
-  const resolvedSocialLinks = { instagram: "https://www.instagram.com/leegal.uae/", ...socialLinks };
+  const resolvedSocialLinks = { instagram: "https://www.instagram.com/leegal.uae/", linkedin: "https://www.linkedin.com/company/leegal-uae", ...socialLinks };
 
   return <footer className="leegal-uae-footer-footer" aria-label="Leegal website footer">
     <style>{styles}</style>
