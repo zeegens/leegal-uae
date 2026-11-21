@@ -55,8 +55,8 @@ export default function UAEFormationFAQ({ onConsultationClick, questions = faqs 
                     </div>
                 </div>
             </div>
-            <div className="lf-bottom"><div className="lf-bottom-mark"><MessageCircle size={26} /></div><div><span>WE'RE HERE TO HELP</span><h3>Your UAE business journey starts with the right answers.</h3><p>Share your plans with our team and explore your next steps with more confidence.</p></div><button type="button" onClick={consult}>Discuss my business setup <ArrowUpRight size={18} /></button></div>
-            <p className="lf-disclaimer">Information is general guidance only. Requirements, fees, eligibility and approvals depend on the relevant UAE authorities and your circumstances.</p>
+            {/* <div className="lf-bottom"><div className="lf-bottom-mark"><MessageCircle size={26} /></div><div><span>WE'RE HERE TO HELP</span><h3>Your UAE business journey starts with the right answers.</h3><p>Share your plans with our team and explore your next steps with more confidence.</p></div><button type="button" onClick={consult}>Discuss my business setup <ArrowUpRight size={18} /></button></div> */}
+            {/* <p className="lf-disclaimer">Information is general guidance only. Requirements, fees, eligibility and approvals depend on the relevant UAE authorities and your circumstances.</p> */}
         </div>
     </section>;
 }
