@@ -20,6 +20,7 @@ import {
   TermsAndConditions
 } from "./Website/Pages/UAELegalPages";
 import UAEComingSoon from "./Website/Pages/UAEComingSoon";
+import UAEAdminDashboard from "./Admin-Dashboard/Pages/UAEAdminDashboard";
 
 function App() {
   const [count, setCount] = useState(0)
@@ -59,6 +60,11 @@ function App() {
           <Route
             path="/terms-and-conditions"
             element={<TermsAndConditions />}
+          />
+
+          <Route
+            path="/admin/dashboard/*"
+            element={<UAEAdminDashboard />}
           />
 
         </Routes>
