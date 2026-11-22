@@ -1,8 +1,8 @@
 import axiosRequest, { serverURL } from "./axios-request";
 
-const post_data = async (url, body) => {
+const post_data = async (url, body, config = {}) => {
     try {
-        const response = await axiosRequest.post(`/api/${url}`, body);
+        const response = await axiosRequest.post(`/api/${url}`, body, config);
         return response.data;
     } catch (e) {
         const errorData = e?.response?.data;
@@ -13,9 +13,9 @@ const post_data = async (url, body) => {
     }
 };
 
-const get_data = async (url) => {
+const get_data = async (url, config = {}) => {
     try {
-        const response = await axiosRequest.get(`/api/${url}`);
+        const response = await axiosRequest.get(`/api/${url}`, config);
         return response.data;
     } catch (e) {
         const errorData = e?.response?.data;
