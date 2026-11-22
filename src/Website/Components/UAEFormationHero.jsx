@@ -55,7 +55,7 @@ export default function UAEFormationHero({ onLeadSubmit, onConsultation, backgro
       }
 
       // 2. Submit to backend (which sends the notification email to uae@leegal.co via nodemailer)
-      const res = await post_data('consultation', payload);
+      const res = await post_data('consultation', payload, { withCredentials: false });
       if (res && res.status === false) {
         throw new Error(res.message || 'Failed to submit enquiry.');
       }
