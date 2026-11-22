@@ -5,7 +5,7 @@ import { setAccessToken, logout } from "./redux/slices/user-slice";
 // override with VITE_API_URL if needed
 export const serverURL =
     import.meta.env.VITE_API_URL ||
-    (import.meta.env.DEV ? "http://localhost:5000" : "https://api.leegal.co");
+    (import.meta.env.DEV ? "http://localhost:8000" : "https://api.leegal.co");
 
 const axiosRequest = axios.create({
     baseURL: serverURL,

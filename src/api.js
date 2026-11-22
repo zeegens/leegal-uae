@@ -2,21 +2,27 @@ import axiosRequest, { serverURL } from "./axios-request";
 
 const post_data = async (url, body) => {
     try {
-        var response = await axiosRequest.post(`/api/${url}`, body);
-        var data = response.data;
-        return data;
+        const response = await axiosRequest.post(`/api/${url}`, body);
+        return response.data;
     } catch (e) {
-        return e;
+        const errorData = e?.response?.data;
+        const errorMessage = errorData?.message || e?.message || "An unexpected error occurred";
+        const err = new Error(errorMessage);
+        err.data = errorData;
+        throw err;
     }
 };
 
 const get_data = async (url) => {
     try {
-        var response = await axiosRequest.get(`/api/${url}`);
-        var data = response.data;
-        return data;
+        const response = await axiosRequest.get(`/api/${url}`);
+        return response.data;
     } catch (e) {
-        return e;
+        const errorData = e?.response?.data;
+        const errorMessage = errorData?.message || e?.message || "An unexpected error occurred";
+        const err = new Error(errorMessage);
+        err.data = errorData;
+        throw err;
     }
 };
 
