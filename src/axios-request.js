@@ -3,8 +3,7 @@ import { store } from "./redux/store";
 import { setAccessToken, logout } from "./redux/slices/user-slice";
 
 // override with VITE_API_URL if needed
- export const serverURL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
+export const serverURL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const axiosRequest = axios.create({
     baseURL: serverURL,
