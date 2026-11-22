@@ -54,44 +54,19 @@ export default function UAEFormationHero({ onLeadSubmit, onConsultation, backgro
         }
       }
 
-      
-      // 2. Attempt backend endpoint if available
-      try {
-        await post_data('leads', payload);
-      } catch {
-        // Backend optional in development
-      }
-
-      // 3. Send email to uae@leegal.co via FormSubmit API
-      try {
-        await fetch(`https://formsubmit.co/ajax/${TARGET_EMAIL}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({
-            _subject: `New UAE Company Formation Enquiry - ${payload.fullName}`,
-            name: payload.fullName,
-            email: payload.email,
-            phone: payload.phone,
-            formationType: payload.formationType,
-            message: payload.message,
-            _replyto: payload.email,
-            _captcha: 'false',
-            _template: 'table'
-          })
-        });
-      } catch (fetchErr) {
-        console.warn('FormSubmit network error:', fetchErr);
+      // 2. Submit to backend (which sends the notification email to uae@leegal.co via nodemailer)
+      const res = await post_data('consultation', payload);
+      if (res && res.status === false) {
+        throw new Error(res.message || 'Failed to submit enquiry.');
       }
 
       setStatus('success');
-      setFeedback(`Thank you! Your enquiry has been sent to ${TARGET_EMAIL}. Our formation team will be in touch shortly.`);
+      setFeedback('Thank you! Your enquiry has been received. Our UAE formation team will be in touch shortly.');
       setForm(initial);
     } catch (error) {
+      console.error('Consultation submission error:', error);
       setStatus('error');
-      setFeedback(error?.message || `We could not submit your enquiry. Please reach us at ${TARGET_EMAIL}.`);
+      setFeedback(error?.message || `We could not submit your enquiry at this time. Please reach us at ${TARGET_EMAIL}.`);
     }
   };
   const focusForm = () => document.getElementById('uae-lead-name')?.focus();
